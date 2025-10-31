@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { Account } from '../types';
 import { formatCurrency } from '../utils/helpers';
@@ -28,7 +28,23 @@ const RuleProgressBar: React.FC<{ rule: Account['rules'][0] }> = ({ rule }) => {
 
 
 const AccountCard: React.FC<AccountCardProps> = ({ account, isSelected, onSelect }) => {
-  const pnlColor = account.cushion >= 0 ? 'text-green-400' : 'text-red-400';
+  const [currentBalance, setCurrentBalance] = useState(account.balance);
+  const [currentCushion, setCurrentCushion] = useState(account.cushion);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Simulate a small P&L tick to reflect trading activity
+      const pnlTick = (Math.random() - 0.48) * 75; // Skewed slightly positive
+
+      setCurrentBalance((prevBalance) => prevBalance + pnlTick);
+      setCurrentCushion((prevCushion) => prevCushion + pnlTick);
+    }, 2000 + Math.random() * 1000); // Stagger updates for a more natural feel
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval);
+  }, [account.id]); // Rerun effect if the account displayed in this card changes
+
+  const pnlColor = currentCushion >= 0 ? 'text-green-400' : 'text-red-400';
   const platformColor = account.platform === 'ProjectX' ? 'bg-blue-500' : 'bg-orange-500';
 
   return (
@@ -50,8 +66,8 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, isSelected, onSelect
             <p className="text-xs text-gray-400">{account.id}</p>
           </div>
           <div className="text-right">
-            <p className="text-lg font-bold text-white">{formatCurrency(account.balance)}</p>
-            <p className={`text-sm font-semibold ${pnlColor}`}>{formatCurrency(account.cushion)}</p>
+            <p className="text-lg font-bold text-white">{formatCurrency(currentBalance)}</p>
+            <p className={`text-sm font-semibold ${pnlColor}`}>{formatCurrency(currentCushion)}</p>
           </div>
         </div>
       </div>
